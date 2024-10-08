@@ -2,56 +2,96 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Database Management</title>
-    <!-- Update the path to the CSS file -->
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <!-- Custom CSS -->
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
-    <h1>Database Management Interface</h1>
+    <div class="container">
+        <h1 class="text-center my-4">Database Management Interface</h1>
 
-    <div id="container">
+        <div id="container">
+            <!-- Section to select or create a database -->
+            <div class="card my-3">
+                <div class="card-header">
+                    <h2>Select or Create Database</h2>
+                </div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <label for="databaseSelect">Select Database</label>
+                        <select id="databaseSelect" class="form-control">
+                            <!-- Options will be populated dynamically -->
+                        </select>
+                    </div>
+                    <button id="loadDatabase" class="btn btn-primary mb-3">Load Database</button>
 
-        <!-- Section to select or create a database -->
-        <div class="section">
-            <h2>Select Database</h2>
-            <select id="databaseSelect">
-                <!-- Options will be populated dynamically -->
-            </select>
-            <button id="loadDatabase">Load Database</button>
-            <h3>Or Create New Database</h3>
-            <input type="text" id="newDatabaseName" placeholder="Database Name">
-            <button id="createDatabase">Create Database</button>
-        </div>
+                    <hr>
 
-        <!-- Section to add or remove tables -->
-        <div class="section" id="tableSection" style="display: none;">
-            <h2>Manage Tables</h2>
-            <h3>Add Table</h3>
-            <input type="text" id="tableName" placeholder="Table Name">
-            <textarea id="tableSchema" placeholder='Schema (JSON format, e.g., {"field1": "type1", "field2": "type2"})'></textarea>
-            <button id="addTable">Add Table</button>
-
-            <h3>Existing Tables</h3>
-            <ul id="tableList">
-                <!-- List of tables -->
-            </ul>
-        </div>
-
-        <!-- Section to manage rows -->
-        <div class="section" id="rowSection" style="display: none;">
-            <h2>Manage Rows in Table: <span id="currentTableName"></span></h2>
-            <div id="rowFormContainer">
-                <!-- Form to add rows will be generated dynamically -->
+                    <h3>Create New Database</h3>
+                    <div class="input-group mb-3">
+                        <input type="text" id="newDatabaseName" class="form-control" placeholder="Database Name">
+                        <div class="input-group-append">
+                            <button id="createDatabase" class="btn btn-success">Create Database</button>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <button id="addRow">Add Row</button>
 
-            <h3>Table Data</h3>
-            <table id="dataTable">
-                <!-- Table data will be populated dynamically -->
-            </table>
+            <!-- Section to add or remove tables -->
+            <div class="card my-3" id="tableSection" style="display: none;">
+                <div class="card-header">
+                    <h2>Manage Tables</h2>
+                </div>
+                <div class="card-body">
+                    <h3>Add Table</h3>
+                    <div class="form-group">
+                        <input type="text" id="tableName" class="form-control" placeholder="Table Name">
+                    </div>
+                    <div class="form-group">
+                        <textarea id="tableSchema" class="form-control" placeholder='Schema (JSON format, e.g., {"field1": "type1", "field2": "type2"})'></textarea>
+                    </div>
+                    <button id="addTable" class="btn btn-primary">Add Table</button>
+
+                    <hr>
+
+                    <h3>Existing Tables</h3>
+                    <ul id="tableList" class="list-group">
+                        <!-- List of tables -->
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Section to manage rows -->
+            <div class="card my-3" id="rowSection" style="display: none;">
+                <div class="card-header">
+                    <h2>Manage Rows in Table: <span id="currentTableName"></span></h2>
+                </div>
+                <div class="card-body">
+                    <div id="rowFormContainer" class="form-row">
+                        <!-- Form to add rows will be generated dynamically -->
+                    </div>
+                    <button id="addRow" class="btn btn-primary mt-3">Add Row</button>
+
+                    <hr>
+
+                    <h3>Table Data</h3>
+                    <div class="table-responsive">
+                        <table id="dataTable" class="table table-striped">
+                            <!-- Table data will be populated dynamically -->
+                        </table>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
+    <!-- Bootstrap JS and dependencies -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
     <script src="/static/script.js"></script>
 </body>
 </html>
