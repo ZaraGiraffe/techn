@@ -1,290 +1,235 @@
 import os
 import pytest
 import json
-from app import app, DATABASE_DIR
+from unittest.mock import patch, mock_open
+from app import (
+    validate_value,
+    schemas_equal,
+    load_database,
+    save_database,
+    create_database_logic,
+    list_databases_logic,
+    add_table_logic,
+    delete_table_logic,
+    add_row_logic,
+    delete_row_logic,
+    get_all_rows_logic,
+    get_table_schema_logic,
+    list_tables_logic,
+    intersect_tables_logic,
+    DATABASE_DIR
+)
 
 
 @pytest.fixture
-def client():
-    # Set up
-    app.config['TESTING'] = True
-    client = app.test_client()
+def mock_database_dir(tmp_path, monkeypatch):
+    # Use a temporary directory for databases
+    temp_database_dir = tmp_path / 'databases'
+    os.makedirs(temp_database_dir, exist_ok=True)
+    # Monkeypatch the DATABASE_DIR in the app module
+    monkeypatch.setattr('app.DATABASE_DIR', str(temp_database_dir))
+    return temp_database_dir
 
-    # Before each test, ensure the databases directory is clean
-    if os.path.exists(DATABASE_DIR):
-        for filename in os.listdir(DATABASE_DIR):
-            file_path = os.path.join(DATABASE_DIR, filename)
-            os.remove(file_path)
-    else:
-        os.makedirs(DATABASE_DIR)
-
-    yield client
-
-    # Tear down
-    # Clean up the databases directory after each test
-    for filename in os.listdir(DATABASE_DIR):
-        file_path = os.path.join(DATABASE_DIR, filename)
-        os.remove(file_path)
+def test_validate_value_integer():
+    assert validate_value('123', 'integer')
+    assert not validate_value('abc', 'integer')
+    assert validate_value('-123', 'integer')  # Modify if negatives are invalid
+    assert not validate_value('12.3', 'integer')
 
 
-@pytest.fixture
-def client():
-    # Set up
-    app.config['TESTING'] = True
-    client = app.test_client()
-
-    # Before each test, ensure the databases directory is clean
-    if os.path.exists(DATABASE_DIR):
-        for filename in os.listdir(DATABASE_DIR):
-            file_path = os.path.join(DATABASE_DIR, filename)
-            os.remove(file_path)
-    else:
-        os.makedirs(DATABASE_DIR)
-
-    yield client
-
-    # Tear down
-    # Clean up the databases directory after each test
-    for filename in os.listdir(DATABASE_DIR):
-        file_path = os.path.join(DATABASE_DIR, filename)
-        os.remove(file_path)
+def test_validate_value_real():
+    assert validate_value('123.45', 'real')
+    assert validate_value('123', 'real')
+    assert not validate_value('abc', 'real')
 
 
-def test_list_databases_empty(client):
-    response = client.get('/databases')
-    assert response.status_code == 200
-    assert response.get_json() == []
+def test_validate_value_char():
+    assert validate_value('a', 'char')
+    assert not validate_value('', 'char')
+    assert not validate_value('ab', 'char')
 
 
-def test_create_and_list_databases(client):
-    client.post('/create_database/testdb')
-    response = client.get('/databases')
-    assert response.status_code == 200
-    assert 'testdb' in response.get_json()
+def test_validate_value_string():
+    assert validate_value('hello', 'string')
+    assert validate_value('', 'string')
 
 
-def test_create_database(client):
-    response = client.post('/create_database/testdb')
-    assert response.status_code == 201
-    assert response.get_json()['message'] == 'Database testdb created successfully'
+def test_validate_value_date():
+    assert validate_value('2023-10-12', 'date')
+    assert not validate_value('2023-13-12', 'date')
+    assert not validate_value('2023-02-30', 'date')  # Invalid date
+    assert not validate_value('12-10-2023', 'date')
 
 
-def test_create_existing_database(client):
-    client.post('/create_database/testdb')
-    response = client.post('/create_database/testdb')
-    assert response.status_code == 400
-    assert response.get_json()['error'] == 'Database already exists'
+def test_validate_value_date_interval():
+    assert validate_value('2023-10-01/2023-10-31', 'date_interval')
+    assert not validate_value('2023-10-01', 'date_interval')
+    assert not validate_value('2023-10-01/invalid', 'date_interval')
 
 
-def test_list_tables_empty(client):
-    client.post('/create_database/testdb')
-    response = client.get('/testdb/tables_list')
-    assert response.status_code == 200
-    assert response.get_json() == []
+def test_validate_value_invalid_type():
+    assert not validate_value('123', 'unsupported_type')
 
 
-def test_add_table(client):
-    client.post('/create_database/testdb')
-    data = {
-        'table_name': 'users',
-        'schema': {
-            'id': 'integer',
-            'name': 'string'
-        }
-    }
-    response = client.post('/testdb/tables', json=data)
-    assert response.status_code == 201
-    assert response.get_json()['message'] == 'Table users added successfully'
+def test_schemas_equal_same():
+    schema1 = {'id': 'integer', 'name': 'string'}
+    schema2 = {'id': 'integer', 'name': 'string'}
+    assert schemas_equal(schema1, schema2)
 
 
-def test_add_existing_table(client):
-    client.post('/create_database/testdb')
-    data = {
-        'table_name': 'users',
-        'schema': {
-            'id': 'integer',
-            'name': 'string'
-        }
-    }
-    client.post('/testdb/tables', json=data)
-    response = client.post('/testdb/tables', json=data)
-    assert response.status_code == 400
-    assert response.get_json()['error'] == 'Table already exists'
+def test_schemas_equal_different_keys():
+    schema1 = {'id': 'integer', 'name': 'string'}
+    schema2 = {'id': 'integer', 'email': 'string'}
+    assert not schemas_equal(schema1, schema2)
 
 
-def test_get_table_schema(client):
-    client.post('/create_database/testdb')
-    data = {
-        'table_name': 'users',
-        'schema': {
-            'id': 'integer',
-            'name': 'string'
-        }
-    }
-    client.post('/testdb/tables', json=data)
-    response = client.get('/testdb/tables/users/schema')
-    assert response.status_code == 200
-    assert response.get_json() == data['schema']
+def test_schemas_equal_different_types():
+    schema1 = {'id': 'integer', 'name': 'string'}
+    schema2 = {'id': 'real', 'name': 'string'}
+    assert not schemas_equal(schema1, schema2)
 
 
-def test_get_schema_nonexistent_table(client):
-    client.post('/create_database/testdb')
-    response = client.get('/testdb/tables/users/schema')
-    assert response.status_code == 404
-    assert response.get_json()['error'] == 'Table does not exist'
+def test_load_and_save_database(mock_database_dir):
+    db_name = 'testdb'
+    data = {'tables': {'users': {'schema': {'id': 'integer'}, 'rows': []}}}
+    save_database(db_name, data)
+    loaded_data = load_database(db_name)
+    assert loaded_data == data
 
 
-def test_add_row(client):
-    client.post('/create_database/testdb')
-    data = {
-        'table_name': 'users',
-        'schema': {
-            'id': 'integer',
-            'name': 'string'
-        }
-    }
-    client.post('/testdb/tables', json=data)
-    row_data = {
-        'id': '1',
-        'name': 'Alice'
-    }
-    response = client.post('/testdb/tables/users/rows', json=row_data)
-    assert response.status_code == 201
-    assert response.get_json()['message'] == 'Row added successfully'
+def test_create_database_logic(mock_database_dir):
+    db_name = 'testdb'
+    success, message = create_database_logic(db_name)
+    assert success
+    assert message == f'Database {db_name} created successfully'
+    # Try creating the same database again
+    success, message = create_database_logic(db_name)
+    assert not success
+    assert message == 'Database already exists'
 
+def test_list_databases_logic(mock_database_dir):
+    db_name1 = 'testdb1'
+    db_name2 = 'testdb2'
+    create_database_logic(db_name1)
+    create_database_logic(db_name2)
+    db_list = list_databases_logic()
+    assert set(db_list) == {db_name1, db_name2}
 
-def test_add_row_invalid_data(client):
-    client.post('/create_database/testdb')
-    data = {
-        'table_name': 'users',
-        'schema': {
-            'id': 'integer',
-            'name': 'string'
-        }
-    }
-    client.post('/testdb/tables', json=data)
-    row_data = {
-        'id': 'abc',  # Invalid integer
-        'name': 'Alice'
-    }
-    response = client.post('/testdb/tables/users/rows', json=row_data)
-    assert response.status_code == 400
-    assert 'Invalid value for field id' in response.get_json()['error']
+def test_add_table_logic(mock_database_dir):
+    db_name = 'testdb'
+    create_database_logic(db_name)
+    table_name = 'users'
+    schema = {'id': 'integer', 'name': 'string'}
+    success, message = add_table_logic(db_name, table_name, schema)
+    assert success
+    assert message == f'Table {table_name} added successfully'
+    # Try adding the same table again
+    success, message = add_table_logic(db_name, table_name, schema)
+    assert not success
+    assert message == 'Table already exists'
 
+def test_delete_table_logic(mock_database_dir):
+    db_name = 'testdb'
+    create_database_logic(db_name)
+    table_name = 'users'
+    schema = {'id': 'integer'}
+    add_table_logic(db_name, table_name, schema)
+    success, message = delete_table_logic(db_name, table_name)
+    assert success
+    assert message == f'Table {table_name} deleted successfully'
+    # Try deleting again
+    success, message = delete_table_logic(db_name, table_name)
+    assert not success
+    assert message == 'Table does not exist'
 
-def test_delete_row(client):
-    client.post('/create_database/testdb')
-    data = {
-        'table_name': 'users',
-        'schema': {
-            'id': 'integer',
-            'name': 'string'
-        }
-    }
-    client.post('/testdb/tables', json=data)
-    row_data = {
-        'id': '1',
-        'name': 'Alice'
-    }
-    client.post('/testdb/tables/users/rows', json=row_data)
-    response = client.delete('/testdb/tables/users/rows/0')
-    assert response.status_code == 200
-    assert response.get_json()['message'] == 'Row deleted successfully'
+def test_add_row_logic(mock_database_dir):
+    db_name = 'testdb'
+    create_database_logic(db_name)
+    table_name = 'users'
+    schema = {'id': 'integer', 'name': 'string'}
+    add_table_logic(db_name, table_name, schema)
+    row_data = {'id': '1', 'name': 'Alice'}
+    success, message = add_row_logic(db_name, table_name, row_data)
+    assert success
+    assert message == 'Row added successfully'
+    # Add invalid row
+    invalid_row_data = {'id': 'abc', 'name': 'Bob'}
+    success, message = add_row_logic(db_name, table_name, invalid_row_data)
+    assert not success
+    assert message == 'Invalid value for field id'
 
+def test_delete_row_logic(mock_database_dir):
+    db_name = 'testdb'
+    create_database_logic(db_name)
+    table_name = 'users'
+    schema = {'id': 'integer'}
+    add_table_logic(db_name, table_name, schema)
+    add_row_logic(db_name, table_name, {'id': '1'})
+    # Delete the row
+    success, message = delete_row_logic(db_name, table_name, 0)
+    assert success
+    assert message == 'Row deleted successfully'
+    # Try deleting again
+    success, message = delete_row_logic(db_name, table_name, 0)
+    assert not success
+    assert message == 'Row ID out of range'
 
-def test_delete_nonexistent_row(client):
-    client.post('/create_database/testdb')
-    data = {
-        'table_name': 'users',
-        'schema': {
-            'id': 'integer',
-            'name': 'string'
-        }
-    }
-    client.post('/testdb/tables', json=data)
-    response = client.delete('/testdb/tables/users/rows/0')
-    assert response.status_code == 404
-    assert response.get_json()['error'] == 'Row ID out of range'
+def test_get_all_rows_logic(mock_database_dir):
+    db_name = 'testdb'
+    create_database_logic(db_name)
+    table_name = 'users'
+    schema = {'id': 'integer', 'name': 'string'}
+    add_table_logic(db_name, table_name, schema)
+    add_row_logic(db_name, table_name, {'id': '1', 'name': 'Alice'})
+    add_row_logic(db_name, table_name, {'id': '2', 'name': 'Bob'})
+    rows, error = get_all_rows_logic(db_name, table_name)
+    assert error is None
+    assert rows == [{'id': '1', 'name': 'Alice'}, {'id': '2', 'name': 'Bob'}]
 
+def test_get_table_schema_logic(mock_database_dir):
+    db_name = 'testdb'
+    create_database_logic(db_name)
+    table_name = 'users'
+    schema = {'id': 'integer'}
+    add_table_logic(db_name, table_name, schema)
+    fetched_schema, error = get_table_schema_logic(db_name, table_name)
+    assert error is None
+    assert fetched_schema == schema
+    # Try fetching schema for non-existent table
+    fetched_schema, error = get_table_schema_logic(db_name, 'nonexistent')
+    assert error == 'Table does not exist'
+    assert fetched_schema is None
 
-def test_get_all_rows(client):
-    client.post('/create_database/testdb')
-    data = {
-        'table_name': 'users',
-        'schema': {
-            'id': 'integer',
-            'name': 'string'
-        }
-    }
-    client.post('/testdb/tables', json=data)
-    row_data1 = {'id': '1', 'name': 'Alice'}
-    row_data2 = {'id': '2', 'name': 'Bob'}
-    client.post('/testdb/tables/users/rows', json=row_data1)
-    client.post('/testdb/tables/users/rows', json=row_data2)
-    response = client.get('/testdb/tables/users/rows')
-    assert response.status_code == 200
-    assert response.get_json() == [row_data1, row_data2]
+def test_list_tables_logic(mock_database_dir):
+    db_name = 'testdb'
+    create_database_logic(db_name)
+    add_table_logic(db_name, 'users', {'id': 'integer'})
+    add_table_logic(db_name, 'orders', {'order_id': 'integer'})
+    tables = list_tables_logic(db_name)
+    assert set(tables) == {'users', 'orders'}
 
-
-def test_intersect_tables(client):
-    client.post('/create_database/testdb')
-
-    # Create table1
-    data1 = {
-        'table_name': 'table1',
-        'schema': {
-            'id': 'integer',
-            'name': 'string'
-        }
-    }
-    client.post('/testdb/tables', json=data1)
-    row_data1 = {'id': '1', 'name': 'Alice'}
-    row_data2 = {'id': '2', 'name': 'Bob'}
-    client.post('/testdb/tables/table1/rows', json=row_data1)
-    client.post('/testdb/tables/table1/rows', json=row_data2)
-
-    # Create table2
-    data2 = {
-        'table_name': 'table2',
-        'schema': {
-            'id': 'integer',
-            'name': 'string'
-        }
-    }
-    client.post('/testdb/tables', json=data2)
-    row_data3 = {'id': '2', 'name': 'Bob'}
-    row_data4 = {'id': '3', 'name': 'Charlie'}
-    client.post('/testdb/tables/table2/rows', json=row_data3)
-    client.post('/testdb/tables/table2/rows', json=row_data4)
-
-    response = client.get('/testdb/tables/table1/intersect/table2')
-    assert response.status_code == 200
-    assert response.get_json() == [row_data2]  # Only Bob is common
-
-
-def test_intersect_tables_different_schemas(client):
-    client.post('/create_database/testdb')
-
-    # Create table1
-    data1 = {
-        'table_name': 'table1',
-        'schema': {
-            'id': 'integer',
-            'name': 'string'
-        }
-    }
-    client.post('/testdb/tables', json=data1)
-
-    # Create table2 with different schema
-    data2 = {
-        'table_name': 'table2',
-        'schema': {
-            'id': 'integer',
-            'email': 'string'
-        }
-    }
-    client.post('/testdb/tables', json=data2)
-
-    response = client.get('/testdb/tables/table1/intersect/table2')
-    assert response.status_code == 400
-    assert response.get_json()['error'] == 'Table schemas are not equal'
+def test_intersect_tables_logic(mock_database_dir):
+    db_name = 'testdb'
+    create_database_logic(db_name)
+    schema = {'id': 'integer', 'name': 'string'}
+    add_table_logic(db_name, 'table1', schema)
+    add_table_logic(db_name, 'table2', schema)
+    add_row_logic(db_name, 'table1', {'id': '1', 'name': 'Alice'})
+    add_row_logic(db_name, 'table1', {'id': '2', 'name': 'Bob'})
+    add_row_logic(db_name, 'table2', {'id': '2', 'name': 'Bob'})
+    add_row_logic(db_name, 'table2', {'id': '3', 'name': 'Charlie'})
+    success, error, result = intersect_tables_logic(db_name, 'table1', 'table2')
+    assert success
+    assert error is None
+    assert result == [{'id': '2', 'name': 'Bob'}]
+    # Test with non-existent table
+    success, error, result = intersect_tables_logic(db_name, 'table1', 'nonexistent')
+    assert not success
+    assert error == 'One or both tables do not exist'
+    assert result is None
+    # Test with mismatched schemas
+    add_table_logic(db_name, 'table3', {'id': 'integer', 'email': 'string'})
+    success, error, result = intersect_tables_logic(db_name, 'table1', 'table3')
+    assert not success
+    assert error == 'Table schemas are not equal'
+    assert result is None

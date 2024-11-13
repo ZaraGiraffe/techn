@@ -31,6 +31,16 @@ document.addEventListener('DOMContentLoaded', function() {
     // List of supported data types
     const dataTypes = ['integer', 'real', 'char', 'string', 'date', 'date_interval'];
 
+    // Placeholder examples for data types
+    const placeholderExamples = {
+        'integer': 'e.g., 123',
+        'real': 'e.g., 123.45',
+        'char': 'e.g., a',
+        'string': 'e.g., Hello World',
+        'date': 'YYYY-MM-DD',
+        'date_interval': 'YYYY-MM-DD/YYYY-MM-DD'
+    };
+
     // Field counter to keep track of fields
     let fieldCount = 0;
 
@@ -256,33 +266,38 @@ document.addEventListener('DOMContentLoaded', function() {
         generateRowForm();
     }
 
-    // Generate form to add a new row based on the schema
     function generateRowForm() {
         rowFormContainer.innerHTML = '';
         for (let field in currentSchema) {
             const colDiv = document.createElement('div');
             colDiv.className = 'col-md-6';
-
+    
             const formGroup = document.createElement('div');
             formGroup.className = 'form-group';
-
+    
             const label = document.createElement('label');
             label.textContent = `${field} (${currentSchema[field]}):`;
             label.setAttribute('for', `input-${field}`);
-
+    
             const input = document.createElement('input');
             input.name = field;
             input.id = `input-${field}`;
             input.dataset.type = currentSchema[field];
             input.required = true;
             input.className = 'form-control';
-
+    
+            // Set placeholder based on data type
+            const dataType = currentSchema[field];
+            const placeholderText = placeholderExamples[dataType] || '';
+            input.placeholder = placeholderText;
+    
             formGroup.appendChild(label);
             formGroup.appendChild(input);
             colDiv.appendChild(formGroup);
             rowFormContainer.appendChild(colDiv);
         }
     }
+    
 
     // Event listener for adding a new row
     addRowButton.addEventListener('click', async () => {
