@@ -18,10 +18,8 @@ document.addEventListener('DOMContentLoaded', function() {
     let currentTable = '';
     let currentSchema = {};
 
-    // Load existing databases (this requires an endpoint to list databases)
+    // Load existing databases
     async function loadDatabases() {
-        // For simplicity, we'll assume databases are files in the databases directory
-        // We need to modify the backend to provide an endpoint that lists databases
         const response = await fetch('/databases');
         const databases = await response.json();
         databaseSelect.innerHTML = '';
@@ -46,10 +44,17 @@ document.addEventListener('DOMContentLoaded', function() {
     createDatabaseButton.addEventListener('click', async () => {
         const dbName = newDatabaseNameInput.value.trim();
         if (dbName) {
-            // Create an empty database (save an empty JSON file)
-            await fetch(`/create_database/${dbName}`, { method: 'POST' });
-            await loadDatabases();
-            newDatabaseNameInput.value = '';
+            const response = await fetch(`/create_database/${dbName}`, { method: 'POST' });
+            const result = await response.json();
+            if (response.ok) {
+                showAlert(result.message, 'success');
+                await loadDatabases();
+                newDatabaseNameInput.value = '';
+            } else {
+                showAlert(result.error, 'danger');
+            }
+        } else {
+            showAlert('Please enter a database name.', 'warning');
         }
     });
 
@@ -61,6 +66,7 @@ document.addEventListener('DOMContentLoaded', function() {
         tables.forEach(table => {
             const li = document.createElement('li');
             li.textContent = table;
+            li.className = 'list-group-item d-flex justify-content-between align-items-center';
             li.addEventListener('click', () => {
                 currentTable = table;
                 currentTableNameSpan.textContent = currentTable;
@@ -68,6 +74,27 @@ document.addEventListener('DOMContentLoaded', function() {
                 loadSchema();
                 loadTableData();
             });
+
+            // Add delete button for the table
+            const deleteBtn = document.createElement('button');
+            deleteBtn.className = 'btn btn-sm btn-danger';
+            deleteBtn.innerHTML = '<i class="bi bi-trash-fill"></i>';
+            deleteBtn.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                if (confirm(`Are you sure you want to delete the table "${table}"?`)) {
+                    const response = await fetch(`/${currentDatabase}/tables/${table}`, { method: 'DELETE' });
+                    const result = await response.json();
+                    if (response.ok) {
+                        showAlert(result.message, 'success');
+                        loadTables();
+                        rowSection.style.display = 'none';
+                    } else {
+                        showAlert(result.error, 'danger');
+                    }
+                }
+            });
+
+            li.appendChild(deleteBtn);
             tableList.appendChild(li);
         });
     }
@@ -86,20 +113,22 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
                 const result = await response.json();
                 if (response.ok) {
-                    alert(result.message);
+                    showAlert(result.message, 'success');
                     tableNameInput.value = '';
                     tableSchemaInput.value = '';
                     loadTables();
                 } else {
-                    alert(result.error);
+                    showAlert(result.error, 'danger');
                 }
             } catch (e) {
-                alert('Invalid schema JSON format.');
+                showAlert('Invalid schema JSON format.', 'danger');
             }
+        } else {
+            showAlert('Please enter table name and schema.', 'warning');
         }
     });
 
-    // Load schema of the current table to generate the form
+    // Load schema of the current table
     async function loadSchema() {
         const response = await fetch(`/${currentDatabase}/tables/${currentTable}/schema`);
         currentSchema = await response.json();
@@ -110,14 +139,27 @@ document.addEventListener('DOMContentLoaded', function() {
     function generateRowForm() {
         rowFormContainer.innerHTML = '';
         for (let field in currentSchema) {
+            const colDiv = document.createElement('div');
+            colDiv.className = 'col-md-6';
+
+            const formGroup = document.createElement('div');
+            formGroup.className = 'form-group';
+
             const label = document.createElement('label');
             label.textContent = `${field} (${currentSchema[field]}):`;
+            label.setAttribute('for', `input-${field}`);
+
             const input = document.createElement('input');
             input.name = field;
+            input.id = `input-${field}`;
             input.dataset.type = currentSchema[field];
             input.required = true;
-            rowFormContainer.appendChild(label);
-            rowFormContainer.appendChild(input);
+            input.className = 'form-control';
+
+            formGroup.appendChild(label);
+            formGroup.appendChild(input);
+            colDiv.appendChild(formGroup);
+            rowFormContainer.appendChild(colDiv);
         }
     }
 
@@ -131,7 +173,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const type = input.dataset.type;
             if (!validateField(value, type)) {
                 isValid = false;
-                alert(`Invalid value for field ${input.name} (expected ${type}).`);
+                showAlert(`Invalid value for field ${input.name} (expected ${type}).`, 'danger');
             } else {
                 rowData[input.name] = value;
             }
@@ -144,10 +186,12 @@ document.addEventListener('DOMContentLoaded', function() {
             });
             const result = await response.json();
             if (response.ok) {
-                alert(result.message);
+                showAlert(result.message, 'success');
                 loadTableData();
+                // Clear inputs
+                inputs.forEach(input => input.value = '');
             } else {
-                alert(result.error);
+                showAlert(result.error, 'danger');
             }
         }
     });
@@ -159,6 +203,7 @@ document.addEventListener('DOMContentLoaded', function() {
         dataTable.innerHTML = '';
         if (data.length > 0) {
             // Create table header
+            const thead = document.createElement('thead');
             const headerRow = document.createElement('tr');
             for (let field in data[0]) {
                 const th = document.createElement('th');
@@ -168,9 +213,11 @@ document.addEventListener('DOMContentLoaded', function() {
             const actionTh = document.createElement('th');
             actionTh.textContent = 'Actions';
             headerRow.appendChild(actionTh);
-            dataTable.appendChild(headerRow);
+            thead.appendChild(headerRow);
+            dataTable.appendChild(thead);
 
-            // Create table rows
+            // Create table body
+            const tbody = document.createElement('tbody');
             data.forEach((row, index) => {
                 const tr = document.createElement('tr');
                 for (let field in row) {
@@ -181,24 +228,28 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Add delete button
                 const actionTd = document.createElement('td');
                 const deleteButton = document.createElement('button');
-                deleteButton.textContent = 'Delete';
+                deleteButton.className = 'btn btn-sm btn-danger';
+                deleteButton.innerHTML = '<i class="bi bi-trash-fill"></i>';
                 deleteButton.addEventListener('click', async () => {
-                    const response = await fetch(`/${currentDatabase}/tables/${currentTable}/rows/${index}`, { method: 'DELETE' });
-                    const result = await response.json();
-                    if (response.ok) {
-                        alert(result.message);
-                        loadTableData();
-                    } else {
-                        alert(result.error);
+                    if (confirm('Are you sure you want to delete this row?')) {
+                        const response = await fetch(`/${currentDatabase}/tables/${currentTable}/rows/${index}`, { method: 'DELETE' });
+                        const result = await response.json();
+                        if (response.ok) {
+                            showAlert(result.message, 'success');
+                            loadTableData();
+                        } else {
+                            showAlert(result.error, 'danger');
+                        }
                     }
                 });
                 actionTd.appendChild(deleteButton);
                 tr.appendChild(actionTd);
 
-                dataTable.appendChild(tr);
+                tbody.appendChild(tr);
             });
+            dataTable.appendChild(tbody);
         } else {
-            dataTable.innerHTML = '<tr><td>No data available.</td></tr>';
+            dataTable.innerHTML = '<tr><td colspan="100%">No data available.</td></tr>';
         }
     }
 
@@ -220,6 +271,23 @@ document.addEventListener('DOMContentLoaded', function() {
             default:
                 return false;
         }
+    }
+
+    // Show alert messages
+    function showAlert(message, type = 'success') {
+        const alertContainer = document.getElementById('alertContainer');
+        alertContainer.innerHTML = `
+            <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                ${message}
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+        `;
+        // Automatically dismiss after 5 seconds
+        setTimeout(() => {
+            $('.alert').alert('close');
+        }, 5000);
     }
 
     // Initial load of databases

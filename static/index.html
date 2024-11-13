@@ -2,16 +2,21 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Database Management</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Database Management Interface</title>
     <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.5.0/font/bootstrap-icons.css">
     <!-- Custom CSS -->
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
     <div class="container">
         <h1 class="text-center my-4">Database Management Interface</h1>
+
+        <!-- Alert Container -->
+        <div id="alertContainer"></div>
 
         <div id="container">
             <!-- Section to select or create a database -->
@@ -26,7 +31,9 @@
                             <!-- Options will be populated dynamically -->
                         </select>
                     </div>
-                    <button id="loadDatabase" class="btn btn-primary mb-3">Load Database</button>
+                    <button id="loadDatabase" class="btn btn-primary mb-3">
+                        <i class="bi bi-database-fill"></i> Load Database
+                    </button>
 
                     <hr>
 
@@ -34,7 +41,9 @@
                     <div class="input-group mb-3">
                         <input type="text" id="newDatabaseName" class="form-control" placeholder="Database Name">
                         <div class="input-group-append">
-                            <button id="createDatabase" class="btn btn-success">Create Database</button>
+                            <button id="createDatabase" class="btn btn-success">
+                                <i class="bi bi-plus-circle"></i> Create Database
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -47,13 +56,17 @@
                 </div>
                 <div class="card-body">
                     <h3>Add Table</h3>
-                    <div class="form-group">
-                        <input type="text" id="tableName" class="form-control" placeholder="Table Name">
-                    </div>
-                    <div class="form-group">
-                        <textarea id="tableSchema" class="form-control" placeholder='Schema (JSON format, e.g., {"field1": "type1", "field2": "type2"})'></textarea>
-                    </div>
-                    <button id="addTable" class="btn btn-primary">Add Table</button>
+                    <form>
+                        <div class="form-group">
+                            <input type="text" id="tableName" class="form-control" placeholder="Table Name">
+                        </div>
+                        <div class="form-group">
+                            <textarea id="tableSchema" class="form-control" rows="3" placeholder='Schema (JSON format, e.g., {"field1": "type1", "field2": "type2"})'></textarea>
+                        </div>
+                        <button id="addTable" type="button" class="btn btn-success">
+                            <i class="bi bi-plus-square"></i> Add Table
+                        </button>
+                    </form>
 
                     <hr>
 
@@ -73,7 +86,9 @@
                     <div id="rowFormContainer" class="form-row">
                         <!-- Form to add rows will be generated dynamically -->
                     </div>
-                    <button id="addRow" class="btn btn-primary mt-3">Add Row</button>
+                    <button id="addRow" class="btn btn-success mt-3">
+                        <i class="bi bi-plus-lg"></i> Add Row
+                    </button>
 
                     <hr>
 
@@ -89,9 +104,11 @@
     </div>
 
     <!-- Bootstrap JS and dependencies -->
-    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <!-- Make sure to include jQuery before Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <!-- Custom JS -->
     <script src="/static/script.js"></script>
 </body>
 </html>
