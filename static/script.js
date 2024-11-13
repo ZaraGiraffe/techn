@@ -5,7 +5,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const newDatabaseNameInput = document.getElementById('newDatabaseName');
     const tableSection = document.getElementById('tableSection');
     const tableNameInput = document.getElementById('tableName');
-    const tableSchemaInput = document.getElementById('tableSchema');
     const addTableButton = document.getElementById('addTable');
     const tableList = document.getElementById('tableList');
     const rowSection = document.getElementById('rowSection');
@@ -14,9 +13,19 @@ document.addEventListener('DOMContentLoaded', function() {
     const addRowButton = document.getElementById('addRow');
     const dataTable = document.getElementById('dataTable');
 
+    const addTableForm = document.getElementById('addTableForm');
+    const schemaBuilder = document.getElementById('schemaBuilder');
+    const addFieldButton = document.getElementById('addFieldButton');
+
     let currentDatabase = '';
     let currentTable = '';
     let currentSchema = {};
+
+    // List of supported data types
+    const dataTypes = ['integer', 'real', 'char', 'string', 'date', 'date_interval'];
+
+    // Field counter to keep track of fields
+    let fieldCount = 0;
 
     // Load existing databases
     async function loadDatabases() {
@@ -99,13 +108,105 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // Event listener for adding a new field to the schema
+    addFieldButton.addEventListener('click', () => {
+        addSchemaField();
+    });
+
+    // Function to add a new field input row
+    function addSchemaField(fieldName = '', fieldType = '') {
+        fieldCount++;
+
+        const fieldRow = document.createElement('div');
+        fieldRow.className = 'form-row align-items-center';
+        fieldRow.id = `fieldRow-${fieldCount}`;
+
+        const colFieldName = document.createElement('div');
+        colFieldName.className = 'col-md-5';
+
+        const fieldNameInput = document.createElement('input');
+        fieldNameInput.type = 'text';
+        fieldNameInput.className = 'form-control mb-2';
+        fieldNameInput.placeholder = 'Field Name';
+        fieldNameInput.name = 'fieldName';
+        fieldNameInput.value = fieldName;
+        fieldNameInput.required = true;
+
+        colFieldName.appendChild(fieldNameInput);
+
+        const colFieldType = document.createElement('div');
+        colFieldType.className = 'col-md-5';
+
+        const fieldTypeSelect = document.createElement('select');
+        fieldTypeSelect.className = 'form-control mb-2';
+        fieldTypeSelect.name = 'fieldType';
+        fieldTypeSelect.required = true;
+
+        // Populate the select options
+        dataTypes.forEach(type => {
+            const option = document.createElement('option');
+            option.value = type;
+            option.textContent = type;
+            if (type === fieldType) {
+                option.selected = true;
+            }
+            fieldTypeSelect.appendChild(option);
+        });
+
+        colFieldType.appendChild(fieldTypeSelect);
+
+        const colRemoveButton = document.createElement('div');
+        colRemoveButton.className = 'col-md-2 text-right';
+
+        const removeButton = document.createElement('button');
+        removeButton.type = 'button';
+        removeButton.className = 'btn btn-danger mb-2';
+        removeButton.innerHTML = '<i class="bi bi-trash-fill"></i>';
+        removeButton.addEventListener('click', () => {
+            schemaBuilder.removeChild(fieldRow);
+        });
+
+        colRemoveButton.appendChild(removeButton);
+
+        fieldRow.appendChild(colFieldName);
+        fieldRow.appendChild(colFieldType);
+        fieldRow.appendChild(colRemoveButton);
+
+        schemaBuilder.appendChild(fieldRow);
+    }
+
     // Event listener for adding a new table
     addTableButton.addEventListener('click', async () => {
         const tableName = tableNameInput.value.trim();
-        const schemaText = tableSchemaInput.value.trim();
-        if (tableName && schemaText) {
-            try {
-                const schema = JSON.parse(schemaText);
+
+        if (tableName) {
+            const schemaInputs = schemaBuilder.querySelectorAll('.form-row');
+            const schema = {};
+
+            let isValid = true;
+            const fieldNamesSet = new Set();
+
+            schemaInputs.forEach(row => {
+                const fieldName = row.querySelector('input[name="fieldName"]').value.trim();
+                const fieldType = row.querySelector('select[name="fieldType"]').value;
+
+                if (!fieldName || !fieldType) {
+                    isValid = false;
+                    showAlert('All fields must have a name and type.', 'warning');
+                    return;
+                }
+
+                if (fieldNamesSet.has(fieldName)) {
+                    isValid = false;
+                    showAlert(`Field name "${fieldName}" is duplicated.`, 'warning');
+                    return;
+                }
+
+                fieldNamesSet.add(fieldName);
+                schema[fieldName] = fieldType;
+            });
+
+            if (isValid) {
                 const response = await fetch(`/${currentDatabase}/tables`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -115,16 +216,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (response.ok) {
                     showAlert(result.message, 'success');
                     tableNameInput.value = '';
-                    tableSchemaInput.value = '';
+                    schemaBuilder.innerHTML = '';
                     loadTables();
                 } else {
                     showAlert(result.error, 'danger');
                 }
-            } catch (e) {
-                showAlert('Invalid schema JSON format.', 'danger');
             }
         } else {
-            showAlert('Please enter table name and schema.', 'warning');
+            showAlert('Please enter a table name.', 'warning');
         }
     });
 

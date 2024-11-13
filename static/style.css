@@ -120,3 +120,12 @@ hr {
         font-size: 1.5rem;
     }
 }
+
+/* Schema Builder Styles */
+#schemaBuilder .form-row {
+    margin-bottom: 10px;
+}
+
+#schemaBuilder .btn-danger {
+    margin-left: 10px;
+}
