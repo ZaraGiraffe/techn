@@ -23,17 +23,15 @@ from app import (
 
 @pytest.fixture
 def mock_database_dir(tmp_path, monkeypatch):
-    # Use a temporary directory for databases
     temp_database_dir = tmp_path / 'databases'
     os.makedirs(temp_database_dir, exist_ok=True)
-    # Monkeypatch the DATABASE_DIR in the app module
     monkeypatch.setattr('app.DATABASE_DIR', str(temp_database_dir))
     return temp_database_dir
 
 def test_validate_value_integer():
     assert validate_value('123', 'integer')
     assert not validate_value('abc', 'integer')
-    assert validate_value('-123', 'integer')  # Modify if negatives are invalid
+    assert validate_value('-123', 'integer')
     assert not validate_value('12.3', 'integer')
 
 
@@ -57,7 +55,7 @@ def test_validate_value_string():
 def test_validate_value_date():
     assert validate_value('2023-10-12', 'date')
     assert not validate_value('2023-13-12', 'date')
-    assert not validate_value('2023-02-30', 'date')  # Invalid date
+    assert not validate_value('2023-02-30', 'date')
     assert not validate_value('12-10-2023', 'date')
 
 
@@ -102,7 +100,6 @@ def test_create_database_logic(mock_database_dir):
     success, message = create_database_logic(db_name)
     assert success
     assert message == f'Database {db_name} created successfully'
-    # Try creating the same database again
     success, message = create_database_logic(db_name)
     assert not success
     assert message == 'Database already exists'
@@ -123,7 +120,6 @@ def test_add_table_logic(mock_database_dir):
     success, message = add_table_logic(db_name, table_name, schema)
     assert success
     assert message == f'Table {table_name} added successfully'
-    # Try adding the same table again
     success, message = add_table_logic(db_name, table_name, schema)
     assert not success
     assert message == 'Table already exists'
@@ -137,7 +133,6 @@ def test_delete_table_logic(mock_database_dir):
     success, message = delete_table_logic(db_name, table_name)
     assert success
     assert message == f'Table {table_name} deleted successfully'
-    # Try deleting again
     success, message = delete_table_logic(db_name, table_name)
     assert not success
     assert message == 'Table does not exist'
@@ -152,7 +147,6 @@ def test_add_row_logic(mock_database_dir):
     success, message = add_row_logic(db_name, table_name, row_data)
     assert success
     assert message == 'Row added successfully'
-    # Add invalid row
     invalid_row_data = {'id': 'abc', 'name': 'Bob'}
     success, message = add_row_logic(db_name, table_name, invalid_row_data)
     assert not success
@@ -165,11 +159,9 @@ def test_delete_row_logic(mock_database_dir):
     schema = {'id': 'integer'}
     add_table_logic(db_name, table_name, schema)
     add_row_logic(db_name, table_name, {'id': '1'})
-    # Delete the row
     success, message = delete_row_logic(db_name, table_name, 0)
     assert success
     assert message == 'Row deleted successfully'
-    # Try deleting again
     success, message = delete_row_logic(db_name, table_name, 0)
     assert not success
     assert message == 'Row ID out of range'
@@ -195,7 +187,6 @@ def test_get_table_schema_logic(mock_database_dir):
     fetched_schema, error = get_table_schema_logic(db_name, table_name)
     assert error is None
     assert fetched_schema == schema
-    # Try fetching schema for non-existent table
     fetched_schema, error = get_table_schema_logic(db_name, 'nonexistent')
     assert error == 'Table does not exist'
     assert fetched_schema is None
@@ -222,12 +213,10 @@ def test_intersect_tables_logic(mock_database_dir):
     assert success
     assert error is None
     assert result == [{'id': '2', 'name': 'Bob'}]
-    # Test with non-existent table
     success, error, result = intersect_tables_logic(db_name, 'table1', 'nonexistent')
     assert not success
     assert error == 'One or both tables do not exist'
     assert result is None
-    # Test with mismatched schemas
     add_table_logic(db_name, 'table3', {'id': 'integer', 'email': 'string'})
     success, error, result = intersect_tables_logic(db_name, 'table1', 'table3')
     assert not success

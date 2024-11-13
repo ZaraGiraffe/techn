@@ -8,7 +8,6 @@ app = Flask(__name__)
 
 DATABASE_DIR = 'databases'
 
-# Ensure the databases directory exists
 if not os.path.exists(DATABASE_DIR):
     os.makedirs(DATABASE_DIR)
 
@@ -158,7 +157,6 @@ def intersect_tables_logic(db_name, table1_name, table2_name):
     return True, None, intersection_rows
 
 
-# Flask route handlers
 @app.route('/databases', methods=['GET'])
 def list_databases():
     db_list = list_databases_logic()

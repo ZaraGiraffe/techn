@@ -17,7 +17,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const schemaBuilder = document.getElementById('schemaBuilder');
     const addFieldButton = document.getElementById('addFieldButton');
 
-    // Elements for table operations
     const tableOperationsSection = document.getElementById('tableOperationsSection');
     const intersectTable1Select = document.getElementById('intersectTable1');
     const intersectTable2Select = document.getElementById('intersectTable2');
@@ -28,10 +27,8 @@ document.addEventListener('DOMContentLoaded', function() {
     let currentTable = '';
     let currentSchema = {};
 
-    // List of supported data types
     const dataTypes = ['integer', 'real', 'char', 'string', 'date', 'date_interval'];
 
-    // Placeholder examples for data types
     const placeholderExamples = {
         'integer': 'e.g., 123',
         'real': 'e.g., 123.45',
@@ -41,10 +38,8 @@ document.addEventListener('DOMContentLoaded', function() {
         'date_interval': 'YYYY-MM-DD/YYYY-MM-DD'
     };
 
-    // Field counter to keep track of fields
     let fieldCount = 0;
 
-    // Load existing databases
     async function loadDatabases() {
         const response = await fetch('/databases');
         const databases = await response.json();
@@ -57,7 +52,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Event listener for loading a database
     loadDatabaseButton.addEventListener('click', () => {
         currentDatabase = databaseSelect.value;
         if (currentDatabase) {
@@ -67,7 +61,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Event listener for creating a new database
     createDatabaseButton.addEventListener('click', async () => {
         const dbName = newDatabaseNameInput.value.trim();
         if (dbName) {
@@ -85,7 +78,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Load tables in the current database
     async function loadTables() {
         const response = await fetch(`/${currentDatabase}/tables_list`);
         const tables = await response.json();
@@ -93,7 +85,6 @@ document.addEventListener('DOMContentLoaded', function() {
         intersectTable1Select.innerHTML = '';
         intersectTable2Select.innerHTML = '';
         tables.forEach(table => {
-            // Update table list
             const li = document.createElement('li');
             li.textContent = table;
             li.className = 'list-group-item d-flex justify-content-between align-items-center';
@@ -105,7 +96,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 loadTableData();
             });
 
-            // Add delete button for the table
             const deleteBtn = document.createElement('button');
             deleteBtn.className = 'btn btn-sm btn-danger';
             deleteBtn.innerHTML = '<i class="bi bi-trash-fill"></i>';
@@ -127,7 +117,6 @@ document.addEventListener('DOMContentLoaded', function() {
             li.appendChild(deleteBtn);
             tableList.appendChild(li);
 
-            // Update intersect table selects
             const option1 = document.createElement('option');
             option1.value = table;
             option1.textContent = table;
@@ -140,12 +129,10 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Event listener for adding a new field to the schema
     addFieldButton.addEventListener('click', () => {
         addSchemaField();
     });
 
-    // Function to add a new field input row
     function addSchemaField(fieldName = '', fieldType = '') {
         fieldCount++;
 
@@ -174,7 +161,6 @@ document.addEventListener('DOMContentLoaded', function() {
         fieldTypeSelect.name = 'fieldType';
         fieldTypeSelect.required = true;
 
-        // Populate the select options
         dataTypes.forEach(type => {
             const option = document.createElement('option');
             option.value = type;
@@ -207,7 +193,6 @@ document.addEventListener('DOMContentLoaded', function() {
         schemaBuilder.appendChild(fieldRow);
     }
 
-    // Event listener for adding a new table
     addTableButton.addEventListener('click', async () => {
         const tableName = tableNameInput.value.trim();
 
@@ -259,7 +244,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Load schema of the current table
     async function loadSchema() {
         const response = await fetch(`/${currentDatabase}/tables/${currentTable}/schema`);
         currentSchema = await response.json();
@@ -286,7 +270,6 @@ document.addEventListener('DOMContentLoaded', function() {
             input.required = true;
             input.className = 'form-control';
     
-            // Set placeholder based on data type
             const dataType = currentSchema[field];
             const placeholderText = placeholderExamples[dataType] || '';
             input.placeholder = placeholderText;
@@ -299,7 +282,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
 
-    // Event listener for adding a new row
     addRowButton.addEventListener('click', async () => {
         const inputs = rowFormContainer.querySelectorAll('input');
         const rowData = {};
@@ -324,7 +306,6 @@ document.addEventListener('DOMContentLoaded', function() {
             if (response.ok) {
                 showAlert(result.message, 'success');
                 loadTableData();
-                // Clear inputs
                 inputs.forEach(input => input.value = '');
             } else {
                 showAlert(result.error, 'danger');
@@ -332,13 +313,11 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Load data of the current table and display it
     async function loadTableData() {
         const response = await fetch(`/${currentDatabase}/tables/${currentTable}/rows`);
         const data = await response.json();
         dataTable.innerHTML = '';
         if (data.length > 0) {
-            // Create table header
             const thead = document.createElement('thead');
             const headerRow = document.createElement('tr');
             for (let field in data[0]) {
@@ -352,7 +331,6 @@ document.addEventListener('DOMContentLoaded', function() {
             thead.appendChild(headerRow);
             dataTable.appendChild(thead);
 
-            // Create table body
             const tbody = document.createElement('tbody');
             data.forEach((row, index) => {
                 const tr = document.createElement('tr');
@@ -361,7 +339,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     td.textContent = row[field];
                     tr.appendChild(td);
                 }
-                // Add delete button
                 const actionTd = document.createElement('td');
                 const deleteButton = document.createElement('button');
                 deleteButton.className = 'btn btn-sm btn-danger';
@@ -389,7 +366,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Validate field value based on its type
     function validateField(value, type) {
         switch (type) {
             case 'integer':
@@ -409,7 +385,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Show alert messages
     function showAlert(message, type = 'success') {
         const alertContainer = document.getElementById('alertContainer');
         alertContainer.innerHTML = `
@@ -420,13 +395,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 </button>
             </div>
         `;
-        // Automatically dismiss after 5 seconds
         setTimeout(() => {
             $('.alert').alert('close');
         }, 5000);
     }
 
-    // Event listener for intersecting tables
     intersectButton.addEventListener('click', async () => {
         const table1 = intersectTable1Select.value;
         const table2 = intersectTable2Select.value;
@@ -446,13 +419,11 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Function to display the intersection result
     function displayIntersectionResult(data) {
         if (data.length > 0) {
             const table = document.createElement('table');
             table.className = 'table table-bordered';
 
-            // Create table header
             const thead = document.createElement('thead');
             const headerRow = document.createElement('tr');
             for (let field in data[0]) {
@@ -463,7 +434,6 @@ document.addEventListener('DOMContentLoaded', function() {
             thead.appendChild(headerRow);
             table.appendChild(thead);
 
-            // Create table body
             const tbody = document.createElement('tbody');
             data.forEach(row => {
                 const tr = document.createElement('tr');
@@ -483,6 +453,5 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Initial load of databases
     loadDatabases();
 });

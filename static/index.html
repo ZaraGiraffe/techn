@@ -1,29 +1,23 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- Meta Tags -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Database Management Interface</title>
 
-    <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
 
-    <!-- Bootstrap Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.5.0/font/bootstrap-icons.css">
 
-    <!-- Custom CSS -->
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
     <div class="container">
         <h1 class="text-center my-4">Database Management Interface</h1>
 
-        <!-- Alert Container -->
         <div id="alertContainer"></div>
 
         <div id="container">
-            <!-- Section to select or create a database -->
             <div class="card my-3">
                 <div class="card-header">
                     <h2>Select or Create Database</h2>
@@ -32,7 +26,6 @@
                     <div class="form-group">
                         <label for="databaseSelect">Select Database</label>
                         <select id="databaseSelect" class="form-control">
-                            <!-- Options will be populated dynamically -->
                         </select>
                     </div>
                     <button id="loadDatabase" class="btn btn-primary mb-3">
@@ -53,7 +46,6 @@
                 </div>
             </div>
 
-            <!-- Section to add or remove tables -->
             <div class="card my-3" id="tableSection" style="display: none;">
                 <div class="card-header">
                     <h2>Manage Tables</h2>
@@ -65,10 +57,8 @@
                             <input type="text" id="tableName" class="form-control" placeholder="Table Name">
                         </div>
 
-                        <!-- Schema Builder Section -->
                         <h4>Define Schema</h4>
                         <div id="schemaBuilder">
-                            <!-- Fields will be added here dynamically -->
                         </div>
                         <button id="addFieldButton" type="button" class="btn btn-secondary mb-3">
                             <i class="bi bi-plus-circle"></i> Add Field
@@ -83,12 +73,10 @@
 
                     <h3>Existing Tables</h3>
                     <ul id="tableList" class="list-group">
-                        <!-- List of tables -->
                     </ul>
                 </div>
             </div>
 
-            <!-- Section to perform table operations -->
             <div class="card my-3" id="tableOperationsSection" style="display: none;">
                 <div class="card-header">
                     <h2>Table Operations</h2>
@@ -100,13 +88,11 @@
                             <div class="form-group col-md-5">
                                 <label for="intersectTable1">Select Table 1</label>
                                 <select id="intersectTable1" class="form-control">
-                                    <!-- Options will be populated dynamically -->
                                 </select>
                             </div>
                             <div class="form-group col-md-5">
                                 <label for="intersectTable2">Select Table 2</label>
                                 <select id="intersectTable2" class="form-control">
-                                    <!-- Options will be populated dynamically -->
                                 </select>
                             </div>
                             <div class="form-group col-md-2 align-self-end">
@@ -118,19 +104,16 @@
                     </form>
 
                     <div id="intersectResult" class="mt-4">
-                        <!-- Intersection results will be displayed here -->
                     </div>
                 </div>
             </div>
 
-            <!-- Section to manage rows -->
             <div class="card my-3" id="rowSection" style="display: none;">
                 <div class="card-header">
                     <h2>Manage Rows in Table: <span id="currentTableName"></span></h2>
                 </div>
                 <div class="card-body">
                     <div id="rowFormContainer" class="form-row">
-                        <!-- Form to add rows will be generated dynamically -->
                     </div>
                     <button id="addRow" class="btn btn-success mt-3">
                         <i class="bi bi-plus-lg"></i> Add Row
@@ -141,7 +124,6 @@
                     <h3>Table Data</h3>
                     <div class="table-responsive">
                         <table id="dataTable" class="table table-striped">
-                            <!-- Table data will be populated dynamically -->
                         </table>
                     </div>
                 </div>
@@ -149,14 +131,9 @@
         </div>
     </div>
 
-    <!-- Bootstrap JS and dependencies -->
-    <!-- Make sure to include jQuery before Bootstrap JS -->
     <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
-    <!-- Popper.js -->
     <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
-    <!-- Bootstrap JS -->
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-    <!-- Custom JS -->
     <script src="/static/script.js"></script>
 </body>
 </html>
