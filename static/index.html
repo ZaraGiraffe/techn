@@ -65,7 +65,7 @@
                             <input type="text" id="tableName" class="form-control" placeholder="Table Name">
                         </div>
 
-                        <!-- New Schema Builder Section -->
+                        <!-- Schema Builder Section -->
                         <h4>Define Schema</h4>
                         <div id="schemaBuilder">
                             <!-- Fields will be added here dynamically -->
@@ -85,6 +85,41 @@
                     <ul id="tableList" class="list-group">
                         <!-- List of tables -->
                     </ul>
+                </div>
+            </div>
+
+            <!-- Section to perform table operations -->
+            <div class="card my-3" id="tableOperationsSection" style="display: none;">
+                <div class="card-header">
+                    <h2>Table Operations</h2>
+                </div>
+                <div class="card-body">
+                    <h3>Intersect Tables</h3>
+                    <form id="intersectForm">
+                        <div class="form-row">
+                            <div class="form-group col-md-5">
+                                <label for="intersectTable1">Select Table 1</label>
+                                <select id="intersectTable1" class="form-control">
+                                    <!-- Options will be populated dynamically -->
+                                </select>
+                            </div>
+                            <div class="form-group col-md-5">
+                                <label for="intersectTable2">Select Table 2</label>
+                                <select id="intersectTable2" class="form-control">
+                                    <!-- Options will be populated dynamically -->
+                                </select>
+                            </div>
+                            <div class="form-group col-md-2 align-self-end">
+                                <button id="intersectButton" type="button" class="btn btn-primary">
+                                    <i class="bi bi-intersect"></i> Intersect
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+
+                    <div id="intersectResult" class="mt-4">
+                        <!-- Intersection results will be displayed here -->
+                    </div>
                 </div>
             </div>
 

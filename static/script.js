@@ -17,6 +17,13 @@ document.addEventListener('DOMContentLoaded', function() {
     const schemaBuilder = document.getElementById('schemaBuilder');
     const addFieldButton = document.getElementById('addFieldButton');
 
+    // Elements for table operations
+    const tableOperationsSection = document.getElementById('tableOperationsSection');
+    const intersectTable1Select = document.getElementById('intersectTable1');
+    const intersectTable2Select = document.getElementById('intersectTable2');
+    const intersectButton = document.getElementById('intersectButton');
+    const intersectResultDiv = document.getElementById('intersectResult');
+
     let currentDatabase = '';
     let currentTable = '';
     let currentSchema = {};
@@ -45,6 +52,7 @@ document.addEventListener('DOMContentLoaded', function() {
         currentDatabase = databaseSelect.value;
         if (currentDatabase) {
             tableSection.style.display = 'block';
+            tableOperationsSection.style.display = 'block';
             loadTables();
         }
     });
@@ -72,7 +80,10 @@ document.addEventListener('DOMContentLoaded', function() {
         const response = await fetch(`/${currentDatabase}/tables_list`);
         const tables = await response.json();
         tableList.innerHTML = '';
+        intersectTable1Select.innerHTML = '';
+        intersectTable2Select.innerHTML = '';
         tables.forEach(table => {
+            // Update table list
             const li = document.createElement('li');
             li.textContent = table;
             li.className = 'list-group-item d-flex justify-content-between align-items-center';
@@ -105,6 +116,17 @@ document.addEventListener('DOMContentLoaded', function() {
 
             li.appendChild(deleteBtn);
             tableList.appendChild(li);
+
+            // Update intersect table selects
+            const option1 = document.createElement('option');
+            option1.value = table;
+            option1.textContent = table;
+            intersectTable1Select.appendChild(option1);
+
+            const option2 = document.createElement('option');
+            option2.value = table;
+            option2.textContent = table;
+            intersectTable2Select.appendChild(option2);
         });
     }
 
@@ -387,6 +409,63 @@ document.addEventListener('DOMContentLoaded', function() {
         setTimeout(() => {
             $('.alert').alert('close');
         }, 5000);
+    }
+
+    // Event listener for intersecting tables
+    intersectButton.addEventListener('click', async () => {
+        const table1 = intersectTable1Select.value;
+        const table2 = intersectTable2Select.value;
+
+        if (table1 && table2) {
+            const response = await fetch(`/${currentDatabase}/tables/${table1}/intersect/${table2}`);
+            const result = await response.json();
+            if (response.ok) {
+                displayIntersectionResult(result);
+            } else {
+                showAlert(result.error, 'danger');
+                intersectResultDiv.innerHTML = '';
+            }
+        } else {
+            showAlert('Please select both tables for intersection.', 'warning');
+            intersectResultDiv.innerHTML = '';
+        }
+    });
+
+    // Function to display the intersection result
+    function displayIntersectionResult(data) {
+        if (data.length > 0) {
+            const table = document.createElement('table');
+            table.className = 'table table-bordered';
+
+            // Create table header
+            const thead = document.createElement('thead');
+            const headerRow = document.createElement('tr');
+            for (let field in data[0]) {
+                const th = document.createElement('th');
+                th.textContent = field;
+                headerRow.appendChild(th);
+            }
+            thead.appendChild(headerRow);
+            table.appendChild(thead);
+
+            // Create table body
+            const tbody = document.createElement('tbody');
+            data.forEach(row => {
+                const tr = document.createElement('tr');
+                for (let field in row) {
+                    const td = document.createElement('td');
+                    td.textContent = row[field];
+                    tr.appendChild(td);
+                }
+                tbody.appendChild(tr);
+            });
+            table.appendChild(tbody);
+
+            intersectResultDiv.innerHTML = '';
+            intersectResultDiv.appendChild(table);
+        } else {
+            intersectResultDiv.innerHTML = '<p>No common rows found in the intersection.</p>';
+        }
     }
 
     // Initial load of databases
