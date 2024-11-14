@@ -42,8 +42,10 @@ def validate_value(value, value_type):
             datetime.strptime(value, "%Y-%m-%d")
         elif value_type == "date_interval":
             start, end = value.split('/')
-            datetime.strptime(start, "%Y-%m-%d")
-            datetime.strptime(end, "%Y-%m-%d")
+            start_date = datetime.strptime(start, "%Y-%m-%d")
+            end_date = datetime.strptime(end, "%Y-%m-%d")
+            if start_date > end_date:
+                return False
         else:
             return False
         return True
