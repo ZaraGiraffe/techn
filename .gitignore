@@ -1,3 +1,4 @@
 .conda
 databases
 .venv
+__pycache__
