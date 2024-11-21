@@ -1,10 +1,11 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 import os
 import json
 from datetime import datetime
-from flask import send_from_directory
+from flask_cors import CORS  # Add this import
 
 app = Flask(__name__)
+CORS(app)  # Enable CORS
 
 DATABASE_DIR = 'databases'
 
@@ -258,4 +259,4 @@ def send_static(path):
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=False, port=5000, host="127.0.0.1")

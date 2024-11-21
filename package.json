@@ -1,0 +1,17 @@
+{
+    "name": "database-management-interface",
+    "version": "1.0.0",
+    "description": "Electron app for database management",
+    "main": "main.js",
+    "scripts": {
+        "start": "electron .",
+        "build": "electron-packager . --platform=win32,darwin,linux --arch=x64 --out=dist"
+    },
+    "devDependencies": {
+        "electron": "^25.3.1",
+        "electron-packager": "^17.1.1"
+    },
+    "dependencies": {
+        "wait-on": "^8.0.1"
+    }
+}
